@@ -2,7 +2,7 @@
 
 use core::ptr;
 
-use crate::{Bit, L};
+use crate::L;
 
 pub unsafe fn read(address: *mut u32) -> u32 {
     ptr::read_volatile(address)
@@ -41,11 +41,15 @@ pub unsafe fn write_bits<const N: usize>(address: *mut u32, bits: &[u32; N], val
     })
 }
 
-pub unsafe fn update_bits<const N: usize, Updater: Fn([bool; N]) -> [bool; N]>(address: *mut u32, bits: &[Bit; N], updater: Updater) {
+pub unsafe fn update_bits<Updater: Fn([bool; N]) -> [bool; N], const N: usize>(
+    address: *mut u32,
+    bits: &[u32; N],
+    updater: Updater,
+) {
     write_bits(address, bits, updater(read_bits(address, bits)))
 }
 
-pub unsafe fn set_bits(address: *mut u32, bits: &[Bit]) {
+pub unsafe fn set_bits(address: *mut u32, bits: &[u32]) {
     update(address, |current| {
         let mut new = current;
 
@@ -57,7 +61,7 @@ pub unsafe fn set_bits(address: *mut u32, bits: &[Bit]) {
         new
     })
 }
-pub unsafe fn clear_bits(address: *mut u32, bits: &[Bit]) {
+pub unsafe fn clear_bits(address: *mut u32, bits: &[u32]) {
     update(address, |current| {
         let mut new = current;
 
@@ -69,7 +73,7 @@ pub unsafe fn clear_bits(address: *mut u32, bits: &[Bit]) {
         new
     })
 }
-pub unsafe fn toggle_bits(address: *mut u32, bits: &[Bit]) {
+pub unsafe fn toggle_bits(address: *mut u32, bits: &[u32]) {
     update(address, |current| {
         let mut new = current;
 

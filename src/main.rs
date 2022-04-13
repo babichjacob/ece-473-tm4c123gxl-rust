@@ -65,18 +65,18 @@ fn setup_port_f() {
     // unsafe { ptr::write_volatile(GPIOAMSEL_PORT_F, 0x00) }
 
     // 4) PCTL GPIO on PF4-0
-    unsafe {
-        ptr::write_volatile(GPIO_PORTF_PCTL_R, 0x00000000);
-    }
+    // unsafe {
+    //     ptr::write_volatile(GPIO_PORTF_PCTL_R, 0x00000000);
+    // }
 
     // 5) PF4,PF0 in, PF3-1 out
     // unsafe {
     //     ptr::write_volatile(GPIO_PORTF_DIR_R, 0x0E);
     // }
     // 6) disable alt funct on PF7-0
-    unsafe {
-        ptr::write_volatile(GPIO_PORTF_AFSEL_R, 0x00);
-    }
+    // unsafe {
+    //     ptr::write_volatile(GPIO_PORTF_AFSEL_R, 0x00);
+    // }
     // enable pull-up on PF0 and PF4
     unsafe {
         ptr::write_volatile(GPIO_PORTF_PUR_R, 0x11);
@@ -99,42 +99,44 @@ fn output_to_port_f(value: u8) {
     }
 }
 
-// #[entry]
-// fn main() -> ! {
-//     let board = setup_board();
-//     let port_f = board.setup_gpio_port(Port::F, PortSetup);
-
-//     let switches = port_f.setup_readable_pins([Bit::Zero, Bit::Four], ReadablePinSetup);
-//     let [sw1, sw2] = switches.pins();
-
-//     let mut rgb_led = port_f.setup_writable_pins(&[Bit::One, Bit::Three, Bit::Two], WritablePinSetup { drive: PinDrive::Digital });
-
-//     loop {
-//         match switches.read_all() {
-//             [L, L] => rgb_led.write_all([L, H, L]),
-//             [L, H] => rgb_led.write_all([L, L, H]),
-//             [H, L] => rgb_led.write_all([L, H, L]),
-//             [H, H] => rgb_led.write_all([L, L, L]),
-//         }
-//     }
-// }
-
 #[entry]
 fn main() -> ! {
-    setup_port_f();
+    let board = setup_board();
+    let port_f = board.setup_gpio_port(Port::F, PortSetup);
+
+    let switches = port_f.setup_readable_pins(&[Bit::Zero, Bit::Four], ReadablePinSetup {
+        function: Function::Digital,
+    });
+    let [sw1, sw2] = switches.pins();
+
+    let mut rgb_led = port_f.setup_writable_pins(&[Bit::One, Bit::Three, Bit::Two], WritablePinSetup { function: Function::Digital });
 
     loop {
-        let status = input_from_port_f();
-
-        match status {
-            0x00 => output_to_port_f(RED | GREEN),
-            0x01 => output_to_port_f(RED),
-            0x10 => output_to_port_f(GREEN),
-            0x11 => output_to_port_f(BLACK),
-            // Impossible case
-            _ => output_to_port_f(BLUE),
+        match switches.read_all() {
+            [L, L] => rgb_led.write_all([L, H, L]),
+            [L, H] => rgb_led.write_all([L, L, H]),
+            [H, L] => rgb_led.write_all([L, H, L]),
+            [H, H] => rgb_led.write_all([H, L, L]),
         }
     }
 }
+
+// #[entry]
+// fn main() -> ! {
+//     setup_port_f();
+
+//     loop {
+//         let status = input_from_port_f();
+
+//         match status {
+//             0x00 => output_to_port_f(RED | GREEN),
+//             0x01 => output_to_port_f(RED),
+//             0x10 => output_to_port_f(GREEN),
+//             0x11 => output_to_port_f(BLACK),
+//             // Impossible case
+//             _ => output_to_port_f(BLUE),
+//         }
+//     }
+// }
 
 // TODO: implement an extremely simple example of the task system (using a timer trigger) that is a traffic light (green -> yellow -> red -> green...)

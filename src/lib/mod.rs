@@ -15,9 +15,12 @@ impl Board {
         let port_io = PortIO { port };
 
         unsafe {
-            memory::set_bits(registers::system::RCGCGPIO, &[port_io.run_mode_clock_gate_control()]);
+            memory::set_bits(
+                registers::system::RCGCGPIO,
+                &[port_io.run_mode_clock_gate_control() as u32],
+            );
         }
-        
+
         port_io
     }
 }
@@ -40,7 +43,17 @@ pub struct PortIO {
     port: Port,
 }
 
+// TODO: refactor to just be self.base() + offset all the time - no matching
 impl PortIO {
+    /// The memory address of the alternate function select (AFSEL) register for this port
+    fn alternate_function_select(&self) -> *mut u32 {
+        match self.port {
+            Port::A => registers::gpio::afsel::PORT_A,
+            Port::F => registers::gpio::afsel::PORT_F,
+            _ => todo!(),
+        }
+    }
+
     /// The memory address of the analog mode select (AMSEL) register for this port
     fn analog_mode_select(&self) -> *mut u32 {
         match self.port {
@@ -92,7 +105,6 @@ impl PortIO {
             Port::A => registers::gpio::pctl::PORT_A,
             Port::F => registers::gpio::pctl::PORT_F,
             _ => todo!(),
-
         }
     }
 
@@ -118,7 +130,6 @@ impl PortIO {
     // Apparently also for ADC!
 }
 
-
 impl PortIO {
     /// The corresponding bit for this port in system's run-mode clock gate control (RCGC) register
     fn run_mode_clock_gate_control(&self) -> Bit {
@@ -143,24 +154,57 @@ impl PortIO {
         unsafe {
             memory::write(self.lock(), UNLOCK);
 
-            memory::set_bits(self.commit(), bits);
+            memory::set_bits(self.commit(), &bits.map(|bit| bit as u32));
         }
 
         // Disable analog when it's not selected (and enable analog if it is)
         match options.function {
             Function::Analog => unsafe {
-                memory::set_bits(self.analog_mode_select(), bits);
+                memory::set_bits(self.analog_mode_select(), &bits.map(|bit| bit as u32));
             },
             _ => unsafe {
-                memory::clear_bits(self.analog_mode_select(), bits);
+                memory::clear_bits(self.analog_mode_select(), &bits.map(|bit| bit as u32));
             },
         }
 
         unsafe {
-            memory::clear_bits(self.direction(), bits);
+            memory::clear_bits(self.direction(), &bits.map(|bit| bit as u32));
         }
 
+        
+
+        for bit in bits {
+            let mut memory_bits = [0; 4];
+
+            let min = (*bit as u32) * 4;
+            let max = min + 3;
+            let range = min..=max;
+
+            for (i, memory_bit) in range.enumerate() {
+                memory_bits[i] = memory_bit;
+            }
+
+            let values = match options.function {
+                Function::Analog => todo!(),
+                Function::Digital => [L, L, L, L],
+                Function::CAN => todo!(),
+                Function::I2C => todo!(),
+                Function::PWM => todo!(),
+                Function::UART => todo!(),
+            };
+            unsafe {
+                memory::write_bits(self.port_control(), &memory_bits, values);
+            }
+        }
+
+
         // TODO: finish
+
+        match options.pull_up {
+            Some(true) => todo!(),
+            Some(false) => todo!(),
+            None => todo!(),
+        }
 
         let data_address = self.data();
 
@@ -178,41 +222,63 @@ impl PortIO {
         unsafe {
             memory::write(self.lock(), UNLOCK);
 
-            memory::set_bits(self.commit(), bits);
+            memory::set_bits(self.commit(), &bits.map(|bit| bit as u32));
         }
 
         // Disable analog when it's not selected (and enable analog if it is)
         match options.function {
             Function::Analog => unsafe {
-                memory::set_bits(self.analog_mode_select(), bits);
+                memory::set_bits(self.analog_mode_select(), &bits.map(|bit| bit as u32));
             },
             _ => unsafe {
-                memory::clear_bits(self.analog_mode_select(), bits);
+                memory::clear_bits(self.analog_mode_select(), &bits.map(|bit| bit as u32));
             },
         }
 
         unsafe {
-            memory::set_bits(self.direction(), bits);
+            memory::set_bits(self.direction(), &bits.map(|bit| bit as u32));
         }
 
-        unsafe {
-            for bit in bits {
-                let memory_bits = [0; N];
-                let values = match options.function {
-                    Function::Analog => todo!(),
-                    Function::Digital => todo!(),
-                    Function::CAN => todo!(),
-                    Function::I2C => todo!(),
-                    Function::PWM => todo!(),
-                    Function::UART => todo!(),
-                };
-                memory::write_bits(self.port_control(), memory_bits, values);
+        for bit in bits {
+            let mut memory_bits = [0; 4];
+
+            let min = (*bit as u32) * 4;
+            let max = min + 3;
+            let range = min..=max;
+
+            for (i, memory_bit) in range.enumerate() {
+                memory_bits[i] = memory_bit;
+            }
+
+            let values = match options.function {
+                Function::Analog => todo!(),
+                Function::Digital => [L, L, L, L],
+                Function::CAN => todo!(),
+                Function::I2C => todo!(),
+                Function::PWM => todo!(),
+                Function::UART => todo!(),
+            };
+            unsafe {
+                memory::write_bits(self.port_control(), &memory_bits, values);
             }
         }
 
         // TODO: check page 671 or 682 (+ more prob) for a table showing initial pin states
 
         // TODO: finish
+
+        match options.function {
+            Function::Analog | Function::Digital => {
+                unsafe {
+                    memory::clear_bits(self.alternate_function_select(), &bits.map(|bit| bit as u32));
+                }
+            },
+            _ => {
+                unsafe {
+                    memory::set_bits(self.alternate_function_select(), &bits.map(|bit| bit as u32));
+                }
+            },
+        }
 
         let data_address = self.data();
 
@@ -246,6 +312,7 @@ pub enum Function {
 
 pub struct ReadablePinSetup {
     pub function: Function,
+    pub pull_up: Option<bool>,
 }
 pub struct ReadablePins<const N: usize> {
     data_address: *mut u32,
@@ -257,7 +324,7 @@ impl<const N: usize> ReadablePins<N> {
     }
 
     pub fn read_all(&self) -> [bool; N] {
-        unsafe { memory::read_bits(self.data_address, &self.pins.map(|pin| pin.bit)) }
+        unsafe { memory::read_bits(self.data_address, &self.pins.map(|pin| pin.bit as u32)) }
     }
 }
 #[derive(Clone, Copy)]
@@ -285,10 +352,16 @@ impl<const N: usize> WritablePins<N> {
     }
 
     pub fn read_all(&self) -> [bool; N] {
-        unsafe { memory::read_bits(self.data_address, &self.pins.map(|pin| pin.bit)) }
+        unsafe { memory::read_bits(self.data_address, &self.pins.map(|pin| pin.bit as u32)) }
     }
     pub fn write_all(&mut self, values: [bool; N]) {
-        unsafe { memory::write_bits(self.data_address, &self.pins.map(|pin| pin.bit), values) }
+        unsafe {
+            memory::write_bits(
+                self.data_address,
+                &self.pins.map(|pin| pin.bit as u32),
+                values,
+            )
+        }
     }
     pub fn update_all<Updater: Fn([bool; N]) -> [bool; N]>(&mut self, updater: Updater) {
         self.write_all(updater(self.read_all()));
@@ -296,17 +369,17 @@ impl<const N: usize> WritablePins<N> {
 
     pub fn clear_all(&mut self) {
         unsafe {
-            memory::clear_bits(self.data_address, &self.pins.map(|pin| pin.bit));
+            memory::clear_bits(self.data_address, &self.pins.map(|pin| pin.bit as u32));
         }
     }
     pub fn set_all(&mut self) {
         unsafe {
-            memory::set_bits(self.data_address, &self.pins.map(|pin| pin.bit));
+            memory::set_bits(self.data_address, &self.pins.map(|pin| pin.bit as u32));
         }
     }
     pub fn toggle_all(&mut self) {
         unsafe {
-            memory::toggle_bits(self.data_address, &self.pins.map(|pin| pin.bit));
+            memory::toggle_bits(self.data_address, &self.pins.map(|pin| pin.bit as u32));
         }
     }
 }
@@ -323,17 +396,17 @@ impl WritablePin {
     }
     pub fn clear(&mut self) {
         unsafe {
-            memory::clear_bits(self.data_address, &[self.bit]);
+            memory::clear_bits(self.data_address, &[self.bit as u32]);
         }
     }
     pub fn set(&mut self) {
         unsafe {
-            memory::set_bits(self.data_address, &[self.bit]);
+            memory::set_bits(self.data_address, &[self.bit as u32]);
         }
     }
     pub fn toggle(&mut self) {
         unsafe {
-            memory::toggle_bits(self.data_address, &[self.bit]);
+            memory::toggle_bits(self.data_address, &[self.bit as u32]);
         }
     }
 }
