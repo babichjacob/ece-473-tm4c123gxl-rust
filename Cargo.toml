@@ -24,6 +24,9 @@ panic-halt = "0.2.0"
 # features = ["stm32f303", "rt"]
 # version = "0.7.1"
 
+[lib]
+path = "src/lib/mod.rs"
+
 # this lets you use `cargo fix`!
 [[bin]]
 name = "test-cortex-m4-rust"
