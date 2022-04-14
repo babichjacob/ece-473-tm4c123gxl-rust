@@ -32,7 +32,7 @@ pub unsafe fn write_bits<const N: usize>(address: *mut u32, bits: &[u32; N], val
         // TODO: look up accumulate or reduce or something
         for (bit, set) in bits.iter().zip(values) {
             if set {
-                new |= (1 << bit);
+                new |= 1 << bit;
             } else {
                 new &= !(1 << bit);
             }
@@ -55,7 +55,7 @@ pub unsafe fn set_bits(address: *mut u32, bits: &[u32]) {
 
         // TODO: look up accumulate or reduce or something
         for bit in bits {
-            new |= (1 << bit);
+            new |= 1 << bit;
         }
 
         new
@@ -79,7 +79,7 @@ pub unsafe fn toggle_bits(address: *mut u32, bits: &[u32]) {
 
         // TODO: look up accumulate or reduce or something
         for bit in bits {
-            new ^= (1 << bit);
+            new ^= 1 << bit;
         }
 
         new

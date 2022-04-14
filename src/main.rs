@@ -5,23 +5,26 @@ use panic_halt as _; // you can put a breakpoint on `rust_begin_unwind` to catch
 
 use cortex_m_rt::entry;
 use test_cortex_m4_rust::{
-    setup_board, Bit, Function, Port, PortSetup, ReadablePinSetup, WritablePinSetup, H, L,
+    setup_board, Function, Pin, Port, PortOptions, ReadablePinOptions, WritablePinOptions, H, L,
 };
 
 #[entry]
 fn main() -> ! {
     let board = setup_board();
-    let port_f = board.setup_gpio_port(Port::F, PortSetup);
+    let port_f = board.setup_gpio_port(Port::F, PortOptions);
 
-    let switches = port_f.setup_readable_pins(&[Bit::Zero, Bit::Four], ReadablePinSetup {
-        function: Function::Digital,
-        pull_up: Some(true),
-    });
+    let switches = port_f.setup_readable_pins(
+        [Pin::Zero, Pin::Four],
+        ReadablePinOptions {
+            function: Function::Digital,
+            pull_up: Some(true),
+        },
+    );
     let [sw1, sw2] = switches.pins();
 
     let mut rgb_led = port_f.setup_writable_pins(
-        &[Bit::One, Bit::Three, Bit::Two],
-        WritablePinSetup {
+        [Pin::One, Pin::Three, Pin::Two],
+        WritablePinOptions {
             function: Function::Digital,
         },
     );
