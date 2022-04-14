@@ -1,5 +1,5 @@
-// https://github.com/rust-lang/vscode-rust/issues/729#issuecomment-635977755
 {
+    // https://github.com/rust-lang/vscode-rust/issues/729#issuecomment-635977755
     "rust-analyzer.cargo.target": "thumbv7em-none-eabihf",
     "rust-analyzer.checkOnSave.allTargets": false
 }

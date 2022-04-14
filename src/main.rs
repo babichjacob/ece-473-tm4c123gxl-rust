@@ -50,5 +50,3 @@ fn main() -> ! {
         }
     }
 }
-
-// TODO: implement an extremely simple example of the task system (using a timer trigger) that is a traffic light (green -> yellow -> red -> green...)
