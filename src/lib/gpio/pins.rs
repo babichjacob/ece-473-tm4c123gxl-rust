@@ -210,7 +210,7 @@ pub fn setup_readable_pins<const N: usize>(
         _ => todo!(),
     }
 
-    let data_address = port.data();
+    let data_address = port.data(&pins);
 
     let pins: [ReadablePin; N] = pins.map(|bit| ReadablePin { data_address, bit });
 
@@ -296,9 +296,9 @@ pub fn setup_writable_pins<const N: usize>(
         _ => todo!(),
     }
 
-    let data_address = port.data();
+    let data_address = port.data(&pins);
 
-    let pins: [WritablePin; N] = pins.map(|bit| WritablePin { data_address, bit });
+    let pins: [WritablePin; N] = pins.map(|pin| WritablePin { data_address, bit: pin });
 
     WritablePins { data_address, pins }
 }

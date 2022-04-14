@@ -58,9 +58,19 @@ impl Port {
     /// The memory address of the data (DATA) register for this port
     ///
     /// Page 662 of data sheet
-    pub(super) fn data(&self) -> *mut u32 {
-        const OFFSET: u32 = 0x3FC;
-        (self.base() + OFFSET) as *mut u32
+    pub(super) fn data(&self, pins: &[Pin]) -> *mut u32 {
+        // Extra guidance provided by
+        // http://shukra.cedt.iisc.ernet.in/edwiki/EmSys:TM4C123GXL_GPIO_-_Read_Write_Data_Register
+        // because the data sheet was a bit hard to understand when thinking about why
+        // the C code I was referencing used an offset of 0x3FC
+        let mut offset = 0;
+
+        for pin in pins {
+            let bit = (*pin as u32) + 2;
+            offset |= 1 << bit;
+        }
+
+        (self.base() + offset) as *mut u32
     }
 
     /// The memory address of the digital enable (DEN) register for this port
