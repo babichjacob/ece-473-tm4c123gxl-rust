@@ -12,6 +12,8 @@ panic-halt = "0.2.0"
 
 [lib]
 path = "src/lib/mod.rs"
+test = false
+bench = false
 
 [[bin]]
 name = "program"
