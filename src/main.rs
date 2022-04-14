@@ -87,18 +87,6 @@ fn setup_port_f() {
     // }
 }
 
-// fn input_from_port_f() -> u32 {
-//     unsafe {
-//         ptr::read_volatile(GPIO_PORTF_DATA_R) & u32::from(SW1 | SW2)
-//     }
-// }
-
-// fn output_to_port_f(value: u8) {
-//     unsafe {
-//         ptr::write_volatile(GPIO_PORTF_DATA_R, u32::from(value));
-//     }
-// }
-
 #[entry]
 fn main() -> ! {
     let board = setup_board();
