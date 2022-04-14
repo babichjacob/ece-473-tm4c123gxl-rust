@@ -38,7 +38,7 @@ pub mod gpio {
 
     /// Page 662 of data sheet
     pub mod data {
-        const OFFSET: u32 = 0x000;
+        const OFFSET: u32 = 0x3FC;
 
         pub const PORT_A: *mut u32 = (super::base::PORT_A + OFFSET) as *mut u32;
         pub const PORT_F: *mut u32 = (super::base::PORT_F + OFFSET) as *mut u32;
