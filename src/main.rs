@@ -4,7 +4,7 @@
 use panic_halt as _; // you can put a breakpoint on `rust_begin_unwind` to catch panics
 
 use cortex_m_rt::entry;
-use test_cortex_m4_rust::{
+use driver_and_task_library::{
     setup_board, Function, Pin, Port, PortOptions, ReadablePinOptions, WritablePinOptions, H, L,
 };
 
@@ -44,9 +44,9 @@ fn main() -> ! {
     loop {
         match switches.read_all() {
             [L, L] => rgb_led.write_all(white),
-            [L, H] => rgb_led.write_all(red),
-            [H, L] => rgb_led.write_all(green),
-            [H, H] => rgb_led.write_all(blue),
+            [L, H] => rgb_led.write_all(blue),
+            [H, L] => rgb_led.write_all(red),
+            [H, H] => rgb_led.write_all(green),
         }
     }
 }

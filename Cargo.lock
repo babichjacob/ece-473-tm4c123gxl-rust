@@ -94,6 +94,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "driver-and-task-library"
+version = "4.14.0"
+dependencies = [
+ "cortex-m 0.6.7",
+ "cortex-m-rt",
+ "cortex-m-semihosting",
+ "panic-halt",
+]
+
+[[package]]
 name = "embedded-hal"
 version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -215,16 +225,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-xid",
-]
-
-[[package]]
-name = "test-cortex-m4-rust"
-version = "0.1.0"
-dependencies = [
- "cortex-m 0.6.7",
- "cortex-m-rt",
- "cortex-m-semihosting",
- "panic-halt",
 ]
 
 [[package]]
