@@ -78,26 +78,26 @@ fn setup_port_f() {
     //     ptr::write_volatile(GPIO_PORTF_AFSEL_R, 0x00);
     // }
     // enable pull-up on PF0 and PF4
-    unsafe {
-        ptr::write_volatile(GPIO_PORTF_PUR_R, 0x11);
-    }
+    // unsafe {
+    //     ptr::write_volatile(GPIO_PORTF_PUR_R, 0x11);
+    // }
     // 7) enable digital I/O on PF4-0
-    unsafe {
-        ptr::write_volatile(GPIO_PORTF_DEN_R, 0x1F);
-    }
+    // unsafe {
+    //     ptr::write_volatile(GPIO_PORTF_DEN_R, 0x1F);
+    // }
 }
 
-fn input_from_port_f() -> u32 {
-    unsafe {
-        ptr::read_volatile(GPIO_PORTF_DATA_R) & u32::from(SW1 | SW2)
-    }
-}
+// fn input_from_port_f() -> u32 {
+//     unsafe {
+//         ptr::read_volatile(GPIO_PORTF_DATA_R) & u32::from(SW1 | SW2)
+//     }
+// }
 
-fn output_to_port_f(value: u8) {
-    unsafe {
-        ptr::write_volatile(GPIO_PORTF_DATA_R, u32::from(value));
-    }
-}
+// fn output_to_port_f(value: u8) {
+//     unsafe {
+//         ptr::write_volatile(GPIO_PORTF_DATA_R, u32::from(value));
+//     }
+// }
 
 #[entry]
 fn main() -> ! {
@@ -106,6 +106,7 @@ fn main() -> ! {
 
     let switches = port_f.setup_readable_pins(&[Bit::Zero, Bit::Four], ReadablePinSetup {
         function: Function::Digital,
+        pull_up: Some(true),
     });
     let [sw1, sw2] = switches.pins();
 

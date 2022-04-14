@@ -72,6 +72,15 @@ impl PortIO {
         }
     }
 
+    /// The memory address of the digital enable (DEN) register for this port
+    fn digital_enable(&self) -> *mut u32 {
+        match self.port {
+            Port::A => registers::gpio::den::PORT_A,
+            Port::F => registers::gpio::den::PORT_F,
+            _ => todo!(),
+        }
+    }
+
     /// The memory address of the data (DATA) register for this port
     fn data(&self) -> *mut u32 {
         match self.port {
@@ -145,6 +154,7 @@ impl PortIO {
 }
 
 impl PortIO {
+    // TODO: refactor into private setup_pins function
     pub fn setup_readable_pins<const N: usize>(
         &self,
         bits: &[Bit; N],
@@ -197,13 +207,36 @@ impl PortIO {
             }
         }
 
-
-        // TODO: finish
-
+        // Configure pull-up and pull-down resistors
         match options.pull_up {
-            Some(true) => todo!(),
-            Some(false) => todo!(),
-            None => todo!(),
+            Some(true) => {
+                unsafe {
+                    memory::set_bits(self.pull_up_select(), &bits.map(|bit| bit as u32));
+                }
+            },
+            Some(false) => {
+                unsafe {
+                    memory::set_bits(self.pull_down_select(), &bits.map(|bit| bit as u32));
+                }
+            },
+            None => {
+                unsafe {
+                    memory::clear_bits(self.pull_up_select(), &bits.map(|bit| bit as u32));
+                }
+                unsafe {
+                    memory::clear_bits(self.pull_down_select(), &bits.map(|bit| bit as u32));
+                }
+            },
+        }
+
+        match options.function {
+            Function::Digital => unsafe {
+                memory::set_bits(self.digital_enable(), &bits.map(|bit| bit as u32));
+            },
+            Function::Analog => unsafe {
+                memory::clear_bits(self.digital_enable(), &bits.map(|bit| bit as u32));
+            },
+            _ => todo!(),
         }
 
         let data_address = self.data();
@@ -278,6 +311,16 @@ impl PortIO {
                     memory::set_bits(self.alternate_function_select(), &bits.map(|bit| bit as u32));
                 }
             },
+        }
+
+        match options.function {
+            Function::Digital => unsafe {
+                memory::set_bits(self.digital_enable(), &bits.map(|bit| bit as u32));
+            },
+            Function::Analog => unsafe {
+                memory::clear_bits(self.digital_enable(), &bits.map(|bit| bit as u32));
+            },
+            _ => todo!(),
         }
 
         let data_address = self.data();
