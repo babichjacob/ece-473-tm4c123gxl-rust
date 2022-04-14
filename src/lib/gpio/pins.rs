@@ -298,7 +298,10 @@ pub fn setup_writable_pins<const N: usize>(
 
     let data_address = port.data(&pins);
 
-    let pins: [WritablePin; N] = pins.map(|pin| WritablePin { data_address, bit: pin });
+    let pins: [WritablePin; N] = pins.map(|pin| WritablePin {
+        data_address,
+        bit: pin,
+    });
 
     WritablePins { data_address, pins }
 }

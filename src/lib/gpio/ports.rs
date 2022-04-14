@@ -1,5 +1,5 @@
 use crate::{
-    memory, Pin, ReadablePinOptions, ReadablePins, registers, WritablePinOptions, WritablePins,
+    memory, registers, Pin, ReadablePinOptions, ReadablePins, WritablePinOptions, WritablePins,
 };
 
 use super::pins::{setup_readable_pins, setup_writable_pins};
@@ -160,7 +160,7 @@ impl UsablePort {
     }
 }
 
-pub fn setup_gpio_port(port: Port, options: PortOptions) -> UsablePort {
+pub fn setup_gpio_port(port: Port, _options: PortOptions) -> UsablePort {
     unsafe {
         memory::set_bits(
             registers::system::RCGCGPIO,

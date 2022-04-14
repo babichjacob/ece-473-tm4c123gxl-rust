@@ -20,7 +20,7 @@ fn main() -> ! {
             pull_up: Some(true),
         },
     );
-    let [sw1, sw2] = switches.pins();
+    let [_sw1, _sw2] = switches.pins();
 
     let mut rgb_led = port_f.setup_writable_pins(
         [Pin::One, Pin::Three, Pin::Two],
@@ -30,7 +30,7 @@ fn main() -> ! {
     );
 
     let white = [H, H, H];
-    let black = [L, L, L];
+    let _black = [L, L, L];
 
     let red = [H, L, L];
     let yellow = [H, H, L];
@@ -39,7 +39,7 @@ fn main() -> ! {
     let blue = [L, L, H];
     let magenta = [H, L, H];
 
-    let rainbow = [red, yellow, green, cyan, blue, magenta];
+    let _rainbow = [red, yellow, green, cyan, blue, magenta];
 
     loop {
         match switches.read_all() {

@@ -1,4 +1,4 @@
-use crate::gpio::ports::{Port, PortOptions, UsablePort, setup_gpio_port};
+use crate::gpio::ports::{setup_gpio_port, Port, PortOptions, UsablePort};
 
 pub struct UsableBoard;
 impl UsableBoard {
