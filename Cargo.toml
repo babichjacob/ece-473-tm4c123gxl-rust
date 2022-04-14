@@ -1,6 +1,6 @@
 [package]
 authors = ["J / Jacob Babich <jacobbabichpublic+git@gmail.com>"]
-edition = "2018"
+edition = "2021"
 name = "driver-and-task-library"
 version = "4.14.0"
 
