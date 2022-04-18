@@ -144,7 +144,7 @@ pub struct UsablePort {
 
 impl UsablePort {
     pub fn setup_readable_pins<const N: usize>(
-        &self,
+        &mut self,
         pins: [Pin; N],
         options: ReadablePinOptions,
     ) -> ReadablePins<N> {
@@ -152,7 +152,7 @@ impl UsablePort {
     }
 
     pub fn setup_writable_pins<const N: usize>(
-        &self,
+        &mut self,
         pins: [Pin; N],
         options: WritablePinOptions,
     ) -> WritablePins<N> {

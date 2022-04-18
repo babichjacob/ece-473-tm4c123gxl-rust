@@ -1,6 +1,16 @@
-use crate::{memory, L};
+use crate::{memory, H, L};
 
 use super::ports::Port;
+
+fn reverse_array<const N: usize, T: Default + Copy>(array: [T; N]) -> [T; N] {
+    let mut result: [T; N] = [<T>::default(); N];
+
+    for (out_index, in_index) in (0..N).rev().enumerate() {
+        result[out_index] = array[in_index];
+    }
+
+    result
+}
 
 #[derive(Clone, Copy)]
 pub enum Pin {
@@ -14,6 +24,10 @@ pub enum Pin {
     Seven = 7,
 }
 
+fn pins_to_bits<const N: usize>(pins: &[Pin; N]) -> [u32; N] {
+    pins.map(|pin| pin as u32)
+}
+
 pub enum Function {
     Analog,
     Digital,
@@ -23,10 +37,16 @@ pub enum Function {
     UART,
 }
 
+pub enum Pull {
+    Down,
+    Up,
+    Neither,
+}
+
 /// Page 1351 of data sheet
 pub struct ReadablePinOptions {
     pub function: Function,
-    pub pull_up: Option<bool>,
+    pub pull: Pull,
 }
 pub struct ReadablePins<const N: usize> {
     data_address: *mut u32,
@@ -128,121 +148,49 @@ impl WritablePin {
 /// Page 684 of the data sheet for how the lock mechanism works
 const UNLOCK: u32 = 0x4C4F434B;
 
-fn setup_pins() {
-    todo!();
-}
-
-pub fn setup_readable_pins<const N: usize>(
+fn setup_pins<const N: usize>(
     port: Port,
     pins: [Pin; N],
-    options: ReadablePinOptions,
-) -> ReadablePins<N> {
+    writable: bool,
+    function: Function,
+    pull: Pull,
+) {
     // Unlock the pins
     unsafe {
         memory::write(port.lock(), UNLOCK);
 
-        memory::set_bits(port.commit(), &pins.map(|bit| bit as u32));
+        memory::set_bits(port.commit(), &pins_to_bits(&pins));
     }
 
     // Disable analog when it's not selected (and enable analog if it is)
-    match options.function {
+    match function {
         Function::Analog => unsafe {
-            memory::set_bits(port.analog_mode_select(), &pins.map(|bit| bit as u32));
+            memory::set_bits(port.analog_mode_select(), &pins_to_bits(&pins));
         },
         _ => unsafe {
-            memory::clear_bits(port.analog_mode_select(), &pins.map(|bit| bit as u32));
+            memory::clear_bits(port.analog_mode_select(), &pins_to_bits(&pins));
         },
     }
 
-    unsafe {
-        memory::clear_bits(port.direction(), &pins.map(|bit| bit as u32));
-    }
-
-    for pin in pins {
-        let mut memory_bits = [0; 4];
-
-        let min = (pin as u32) * 4;
-        let max = min + 4;
-        let range = min..max;
-
-        for (i, memory_bit) in range.enumerate() {
-            memory_bits[i] = memory_bit;
-        }
-
-        let values = match options.function {
-            Function::Analog => todo!(),
-            Function::Digital => [L, L, L, L],
-            Function::CAN => todo!(),
-            Function::I2C => todo!(),
-            Function::PWM => todo!(),
-            Function::UART => todo!(),
-        };
+    // Set to output pins if output (otherwise set to input)
+    if writable {
         unsafe {
-            memory::write_bits(port.port_control(), &memory_bits, values);
+            memory::set_bits(port.direction(), &pins_to_bits(&pins));
+        }
+    } else {
+        unsafe {
+            memory::clear_bits(port.direction(), &pins_to_bits(&pins));
         }
     }
 
-    // Configure pull-up and pull-down resistors
-    match options.pull_up {
-        Some(true) => unsafe {
-            memory::set_bits(port.pull_up_select(), &pins.map(|bit| bit as u32));
-        },
-        Some(false) => unsafe {
-            memory::set_bits(port.pull_down_select(), &pins.map(|bit| bit as u32));
-        },
-        None => {
-            unsafe {
-                memory::clear_bits(port.pull_up_select(), &pins.map(|bit| bit as u32));
-            }
-            unsafe {
-                memory::clear_bits(port.pull_down_select(), &pins.map(|bit| bit as u32));
-            }
-        }
-    }
-
-    match options.function {
-        Function::Digital => unsafe {
-            memory::set_bits(port.digital_enable(), &pins.map(|bit| bit as u32));
-        },
-        Function::Analog => unsafe {
-            memory::clear_bits(port.digital_enable(), &pins.map(|bit| bit as u32));
-        },
-        _ => todo!(),
-    }
-
-    let data_address = port.data(&pins);
-
-    let pins: [ReadablePin; N] = pins.map(|bit| ReadablePin { data_address, bit });
-
-    ReadablePins { data_address, pins }
-}
-
-pub fn setup_writable_pins<const N: usize>(
-    port: Port,
-    pins: [Pin; N],
-    options: WritablePinOptions,
-) -> WritablePins<N> {
-    // Unlock the pins
-    unsafe {
-        memory::write(port.lock(), UNLOCK);
-
-        memory::set_bits(port.commit(), &pins.map(|bit| bit as u32));
-    }
-
-    // Disable analog when it's not selected (and enable analog if it is)
-    match options.function {
-        Function::Analog => unsafe {
-            memory::set_bits(port.analog_mode_select(), &pins.map(|bit| bit as u32));
-        },
-        _ => unsafe {
-            memory::clear_bits(port.analog_mode_select(), &pins.map(|bit| bit as u32));
-        },
-    }
-
-    unsafe {
-        memory::set_bits(port.direction(), &pins.map(|bit| bit as u32));
-    }
-
+    let function_values = reverse_array(match function {
+        Function::Analog => todo!(),
+        Function::Digital => [L, L, L, L],
+        Function::CAN => [H, L, L, L],
+        Function::I2C => [L, L, H, H],
+        Function::PWM => [L, H, L, H],
+        Function::UART => [L, L, L, H],
+    });
     for pin in pins {
         let mut memory_bits = [0; 4];
 
@@ -254,54 +202,76 @@ pub fn setup_writable_pins<const N: usize>(
             memory_bits[i] = memory_bit;
         }
 
-        let values = match options.function {
-            Function::Analog => todo!(),
-            Function::Digital => [L, L, L, L],
-            Function::CAN => todo!(),
-            Function::I2C => todo!(),
-            Function::PWM => todo!(),
-            Function::UART => todo!(),
-        };
         unsafe {
-            memory::write_bits(port.port_control(), &memory_bits, values);
+            memory::write_bits(port.port_control(), &memory_bits, function_values);
+        }
+    }
+
+    // Configure pull-up and pull-down resistors
+    match pull {
+        Pull::Down => unsafe {
+            memory::set_bits(port.pull_down_select(), &pins_to_bits(&pins));
+        },
+        Pull::Up => unsafe {
+            memory::set_bits(port.pull_up_select(), &pins_to_bits(&pins));
+        },
+        Pull::Neither => {
+            unsafe {
+                memory::clear_bits(port.pull_up_select(), &pins_to_bits(&pins));
+            }
+            unsafe {
+                memory::clear_bits(port.pull_down_select(), &pins_to_bits(&pins));
+            }
         }
     }
 
     // TODO: check page 671 or 682 (+ more prob) for a table showing initial pin states
 
-    // TODO: finish
-
-    match options.function {
+    // Disable alternate function when it's not used (and enable it when it is)
+    match function {
         Function::Analog | Function::Digital => unsafe {
-            memory::clear_bits(
-                port.alternate_function_select(),
-                &pins.map(|bit| bit as u32),
-            );
+            memory::clear_bits(port.alternate_function_select(), &pins_to_bits(&pins));
         },
         _ => unsafe {
-            memory::set_bits(
-                port.alternate_function_select(),
-                &pins.map(|bit| bit as u32),
-            );
+            memory::set_bits(port.alternate_function_select(), &pins_to_bits(&pins));
         },
     }
 
-    match options.function {
-        Function::Digital => unsafe {
-            memory::set_bits(port.digital_enable(), &pins.map(|bit| bit as u32));
+    // Enable digital function when it's needed (and disable it when it's not)
+    match function {
+        Function::Digital | Function::UART => unsafe {
+            memory::set_bits(port.digital_enable(), &pins_to_bits(&pins));
         },
         Function::Analog => unsafe {
-            memory::clear_bits(port.digital_enable(), &pins.map(|bit| bit as u32));
+            memory::clear_bits(port.digital_enable(), &pins_to_bits(&pins));
         },
         _ => todo!(),
     }
+}
+
+pub fn setup_readable_pins<const N: usize>(
+    port: Port,
+    pins: [Pin; N],
+    options: ReadablePinOptions,
+) -> ReadablePins<N> {
+    setup_pins(port, pins, false, options.function, options.pull);
 
     let data_address = port.data(&pins);
+    let pins: [ReadablePin; N] = pins.map(|bit| ReadablePin { data_address, bit });
+    ReadablePins { data_address, pins }
+}
 
+pub fn setup_writable_pins<const N: usize>(
+    port: Port,
+    pins: [Pin; N],
+    options: WritablePinOptions,
+) -> WritablePins<N> {
+    setup_pins(port, pins, true, options.function, Pull::Neither);
+
+    let data_address = port.data(&pins);
     let pins: [WritablePin; N] = pins.map(|pin| WritablePin {
         data_address,
         bit: pin,
     });
-
     WritablePins { data_address, pins }
 }

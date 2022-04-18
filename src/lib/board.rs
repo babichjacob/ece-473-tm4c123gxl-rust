@@ -2,9 +2,11 @@ use crate::gpio::ports::{setup_gpio_port, Port, PortOptions, UsablePort};
 
 pub struct UsableBoard;
 impl UsableBoard {
-    pub fn setup_gpio_port(&self, port: Port, options: PortOptions) -> UsablePort {
+    pub fn setup_gpio_port(&mut self, port: Port, options: PortOptions) -> UsablePort {
         setup_gpio_port(port, options)
     }
+
+    // TODO: have a no_op function here if so desired
 
     // TODO: check page 704 for timers
     // TODO: impl Drop trait so that tasks all run before the main function ends?
