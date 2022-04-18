@@ -183,9 +183,15 @@ fn uart0_out_string(s: &str) {
     }
 }
 
+const WHITE: [bool; 3] = [H, H, H];
+const BLACK: [bool; 3] = [L, L, L];
+
 const RED: [bool; 3] = [H, L, L];
 const YELLOW: [bool; 3] = [H, H, L];
 const GREEN: [bool; 3] = [L, H, L];
+const CYAN: [bool; 3] = [L, H, H];
+const BLUE: [bool; 3] = [L, L, H];
+const MAGENTA: [bool; 3] = [H, L, H];
 
 #[entry]
 fn main() -> ! {
@@ -226,12 +232,6 @@ fn main() -> ! {
         },
     );
 
-    let WHITE = [H, H, H];
-    let BLACK = [L, L, L];
-
-    let CYAN = [L, H, H];
-    let BLUE = [L, L, H];
-    let MAGENTA = [H, L, H];
 
     let rainbow = [RED, YELLOW, GREEN, CYAN, BLUE, MAGENTA];
 
