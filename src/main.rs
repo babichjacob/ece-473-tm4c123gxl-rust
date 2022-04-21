@@ -57,7 +57,6 @@ static HEAP: BumpPointerAlloc = BumpPointerAlloc {
 #[macro_use]
 extern crate alloc;
 use alloc::string::String;
-use alloc::{format, vec};
 
 use cortex_m::interrupt;
 use panic_halt as _; // you can put a breakpoint on `rust_begin_unwind` to catch panics
