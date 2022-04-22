@@ -1,5 +1,5 @@
 use crate::{
-    memory, registers, Pin, ReadablePinOptions, ReadablePins, WritablePinOptions, WritablePins,
+    memory, Board, Pin, ReadablePinOptions, ReadablePins, WritablePinOptions, WritablePins,
 };
 
 use super::pins::{setup_readable_pins, setup_writable_pins};
@@ -14,13 +14,13 @@ pub enum Port {
     F,
 }
 
-pub struct PortOptions;
+pub struct GPIOPortOptions;
 
 impl Port {
     /// The starting point of memory addresses corresponding to this GPIO register
     ///
     /// Modeled after page 660 of data sheet (GPIO Register Map)
-    fn base(&self) -> u32 {
+    const fn base(&self) -> u32 {
         match self {
             Port::A => 0x4000_4000,
             Port::B => 0x4000_5000,
@@ -34,7 +34,7 @@ impl Port {
     /// The memory address of the alternate function select (AFSEL) register for this port
     ///
     /// Page 671 of data sheet
-    pub(super) fn alternate_function_select(&self) -> *mut u32 {
+    pub(super) const fn alternate_function_select(&self) -> *mut u32 {
         const OFFSET: u32 = 0x420;
         (self.base() + OFFSET) as *mut u32
     }
@@ -42,7 +42,7 @@ impl Port {
     /// The memory address of the analog mode select (AMSEL) register for this port
     ///
     /// Page 687 of data sheet
-    pub(super) fn analog_mode_select(&self) -> *mut u32 {
+    pub(super) const fn analog_mode_select(&self) -> *mut u32 {
         const OFFSET: u32 = 0x52C;
         (self.base() + OFFSET) as *mut u32
     }
@@ -50,7 +50,7 @@ impl Port {
     /// The memory address of the commit (CR) register for this port
     ///
     /// Page 685 of data sheet
-    pub(super) fn commit(&self) -> *mut u32 {
+    pub(super) const fn commit(&self) -> *mut u32 {
         const OFFSET: u32 = 0x524;
         (self.base() + OFFSET) as *mut u32
     }
@@ -76,7 +76,7 @@ impl Port {
     /// The memory address of the digital enable (DEN) register for this port
     ///
     /// Page 682 of data sheet
-    pub(super) fn digital_enable(&self) -> *mut u32 {
+    pub(super) const fn digital_enable(&self) -> *mut u32 {
         const OFFSET: u32 = 0x51C;
         (self.base() + OFFSET) as *mut u32
     }
@@ -84,7 +84,7 @@ impl Port {
     /// The memory address of the direction (DIR) register for this port
     ///
     /// Page 663 of data sheet
-    pub(super) fn direction(&self) -> *mut u32 {
+    pub(super) const fn direction(&self) -> *mut u32 {
         const OFFSET: u32 = 0x400;
         (self.base() + OFFSET) as *mut u32
     }
@@ -92,7 +92,7 @@ impl Port {
     /// The memory address of the lock (LOCK) register
     ///
     /// Page 684 of data sheet
-    pub(super) fn lock(&self) -> *mut u32 {
+    pub(super) const fn lock(&self) -> *mut u32 {
         const OFFSET: u32 = 0x520;
         (self.base() + OFFSET) as *mut u32
     }
@@ -100,21 +100,21 @@ impl Port {
     /// The memory address of the port control (PCTL) register for this port
     ///
     /// Page 688 of data sheet
-    pub(super) fn port_control(&self) -> *mut u32 {
+    pub(super) const fn port_control(&self) -> *mut u32 {
         const OFFSET: u32 = 0x52C;
         (self.base() + OFFSET) as *mut u32
     }
 
     /// The memory address of the pull-down resistor select (PDR) register for this port
     /// Page 679 of data sheet
-    pub(super) fn pull_down_select(&self) -> *mut u32 {
+    pub(super) const fn pull_down_select(&self) -> *mut u32 {
         const OFFSET: u32 = 0x514;
         (self.base() + OFFSET) as *mut u32
     }
 
     /// The memory address of the pull-up resistor select (PUR) register for this port
     /// Page 677 of data sheet
-    pub(super) fn pull_up_select(&self) -> *mut u32 {
+    pub(super) const fn pull_up_select(&self) -> *mut u32 {
         const OFFSET: u32 = 0x510;
         (self.base() + OFFSET) as *mut u32
     }
@@ -125,8 +125,8 @@ impl Port {
 }
 
 impl Port {
-    /// The corresponding bit for this port in system's run-mode clock gate control (RCGC) register
-    fn run_mode_clock_gate_control(&self) -> u32 {
+    /// The corresponding bit for this port in the system's GPIO Run mode clock gating control (RCGCGPIO) register
+    const fn run_mode_clock_gate_control(&self) -> u32 {
         match self {
             Port::A => 0,
             Port::B => 1,
@@ -160,11 +160,12 @@ impl UsablePort {
     }
 }
 
-pub fn setup_gpio_port(port: Port, _options: PortOptions) -> UsablePort {
+// TODO: remove unused port setup options
+pub fn setup_port(board: Board, port: Port, _options: GPIOPortOptions) -> UsablePort {
     unsafe {
         memory::set_bits(
-            registers::system::RCGCGPIO,
-            &[port.run_mode_clock_gate_control() as u32],
+            board.gpio_run_mode_clock_gate_control(),
+            &[port.run_mode_clock_gate_control()],
         );
     }
 

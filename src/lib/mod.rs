@@ -3,7 +3,8 @@
 mod board;
 mod gpio;
 mod memory;
-mod registers;
+mod uart;
+mod utils;
 
 pub use board::*;
 pub use gpio::pins::*;

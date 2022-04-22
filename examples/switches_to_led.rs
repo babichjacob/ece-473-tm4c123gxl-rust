@@ -5,19 +5,20 @@ use panic_halt as _; // you can put a breakpoint on `rust_begin_unwind` to catch
 
 use cortex_m_rt::entry;
 use driver_and_task_library::{
-    setup_board, Function, Pin, Port, PortOptions, ReadablePinOptions, WritablePinOptions, H, L,
+    setup_board, Function, GPIOPortOptions, Pin, Port, Pull, ReadablePinOptions,
+    WritablePinOptions, H, L,
 };
 
 #[entry]
 fn main() -> ! {
     let board = setup_board();
-    let port_f = board.setup_gpio_port(Port::F, PortOptions);
+    let port_f = board.setup_gpio_port(Port::F, GPIOPortOptions);
 
     let switches = port_f.setup_readable_pins(
         [Pin::Zero, Pin::Four],
         ReadablePinOptions {
             function: Function::Digital,
-            pull_up: Some(true),
+            pull: Pull::Up,
         },
     );
     let [_sw1, _sw2] = switches.pins();

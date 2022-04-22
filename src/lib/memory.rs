@@ -2,9 +2,7 @@
 
 use core::ptr;
 
-use crate::L;
-
-pub unsafe fn read(address: *mut u32) -> u32 {
+pub unsafe fn read(address: *const u32) -> u32 {
     ptr::read_volatile(address)
 }
 pub unsafe fn write(address: *mut u32, new: u32) {
@@ -15,29 +13,20 @@ pub unsafe fn update<Updater: Fn(u32) -> u32>(address: *mut u32, updater: Update
     write(address, updater(read(address)));
 }
 
-pub unsafe fn read_bits<const N: usize>(address: *mut u32, bits: &[u32; N]) -> [bool; N] {
+pub unsafe fn read_bits<const N: usize>(address: *const u32, bits: &[u32; N]) -> [bool; N] {
     let current = read(address);
-    let mut result = [L; N];
 
-    // TODO: look up accumulate or reduce or something
-    for (i, bit) in bits.iter().enumerate() {
-        result[i] = (current & (1 << bit)) != 0;
-    }
-
-    result
+    bits.map(|bit| current & (1 << bit) != 0)
 }
 pub unsafe fn write_bits<const N: usize>(address: *mut u32, bits: &[u32; N], values: [bool; N]) {
     update(address, |current| {
-        let mut new = current;
-        // TODO: look up accumulate or reduce or something
-        for (bit, set) in bits.iter().zip(values) {
+        bits.iter().zip(values).fold(current, |result, (bit, set)| {
             if set {
-                new |= 1 << bit;
+                result | (1 << bit)
             } else {
-                new &= !(1 << bit);
+                result & !(1 << bit)
             }
-        }
-        new
+        })
     })
 }
 
@@ -51,37 +40,17 @@ pub unsafe fn update_bits<Updater: Fn([bool; N]) -> [bool; N], const N: usize>(
 
 pub unsafe fn set_bits(address: *mut u32, bits: &[u32]) {
     update(address, |current| {
-        let mut new = current;
-
-        // TODO: look up accumulate or reduce or something
-        for bit in bits {
-            new |= 1 << bit;
-        }
-
-        new
+        bits.iter().fold(current, |result, bit| result | (1 << bit))
     })
 }
 pub unsafe fn clear_bits(address: *mut u32, bits: &[u32]) {
     update(address, |current| {
-        let mut new = current;
-
-        // TODO: look up accumulate or reduce or something
-        for bit in bits {
-            new &= !(1 << bit);
-        }
-
-        new
+        bits.iter()
+            .fold(current, |result, bit| result & !(1 << bit))
     })
 }
 pub unsafe fn toggle_bits(address: *mut u32, bits: &[u32]) {
     update(address, |current| {
-        let mut new = current;
-
-        // TODO: look up accumulate or reduce or something
-        for bit in bits {
-            new ^= 1 << bit;
-        }
-
-        new
+        bits.iter().fold(current, |result, bit| result ^ (1 << bit))
     })
 }
