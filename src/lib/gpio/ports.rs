@@ -14,7 +14,7 @@ pub enum Port {
     F,
 }
 
-pub struct GPIOPortOptions;
+pub struct PortOptions;
 
 impl Port {
     /// The starting point of memory addresses corresponding to this GPIO register
@@ -160,11 +160,10 @@ impl UsablePort {
     }
 }
 
-// TODO: remove unused port setup options
-pub fn setup_port(board: Board, port: Port, _options: GPIOPortOptions) -> UsablePort {
+pub fn setup_port(board: Board, port: Port) -> UsablePort {
     unsafe {
         memory::set_bits(
-            board.gpio_run_mode_clock_gate_control(),
+            board.gpio_run_mode_clock_gating_control(),
             &[port.run_mode_clock_gate_control()],
         );
     }

@@ -5,10 +5,7 @@ name = "driver-and-task-library"
 version = "4.14.0"
 
 [dependencies]
-cortex-m = "0.6.0"
 cortex-m-rt = "0.6.10"
-cortex-m-semihosting = "0.3.3"
-panic-halt = "0.2.0"
 
 [lib]
 path = "src/lib/mod.rs"
@@ -22,6 +19,7 @@ test = false
 bench = false
 
 [profile.release]
+# These comments are from the starter project (not written by me). I left them in since they explain it:
 codegen-units = 1 # better optimizations
 debug = true # symbols are nice and they don't increase the size on Flash
 lto = true # better optimizations

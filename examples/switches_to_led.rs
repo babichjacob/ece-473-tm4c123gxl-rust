@@ -12,7 +12,7 @@ use driver_and_task_library::{
 #[entry]
 fn main() -> ! {
     let board = setup_board();
-    let port_f = board.setup_gpio_port(Port::F, GPIOPortOptions);
+    let port_f = board.setup_gpio_port(Port::F);
 
     let switches = port_f.setup_readable_pins(
         [Pin::Zero, Pin::Four],

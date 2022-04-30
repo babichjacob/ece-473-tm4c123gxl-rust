@@ -86,7 +86,7 @@ impl<const N: usize> WritablePins<N> {
             )
         }
     }
-    pub fn update_all<Updater: Fn([bool; N]) -> [bool; N]>(&mut self, updater: Updater) {
+    pub fn update_all(&mut self, updater: &dyn Fn([bool; N]) -> [bool; N]) {
         self.write_all(updater(self.read_all()));
     }
 
