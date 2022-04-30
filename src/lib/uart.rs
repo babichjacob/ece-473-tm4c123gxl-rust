@@ -69,19 +69,19 @@ impl Port {
         (self.base() + OFFSET) as *mut u32
     }
 
-    /// The memory address of the TODO
+    /// The memory address of the fractional part of the baud rate register
     ///
-    /// Page TODO of data sheet
+    /// Page (ran out of time) of data sheet
     pub(super) const fn fractional_baud_rate_divisor(&self) -> *mut u32 {
-        const OFFSET: u32 = 0x028; // TODO
+        const OFFSET: u32 = 0x028;
         (self.base() + OFFSET) as *mut u32
     }
 
-    /// The memory address of the TODO
+    /// The memory address of the integer part of the baud rate register
     ///
-    /// Page TODO of data sheet
+    /// Page (ran out of time) of data sheet
     pub(super) const fn integer_baud_rate_divisor(&self) -> *mut u32 {
-        const OFFSET: u32 = 0x024; // TODO
+        const OFFSET: u32 = 0x024;
         (self.base() + OFFSET) as *mut u32
     }
 
@@ -148,7 +148,6 @@ pub struct UsablePort {
 }
 
 impl UsablePort {
-    // TODO: add comments
     pub fn read_byte(&self, _receive_pin: &ReadablePin, blocking: bool) -> Option<u8> {
         loop {
             let [receive_fifo_empty] =
@@ -195,7 +194,6 @@ impl UsablePort {
         self.write_string(_transmit_pin, string);
         self.write_string(_transmit_pin, "\r\n");
     }
-    // TODO: validate the passed transmit or receive pin belongs to this UART port
 
     pub fn read_line(
         &mut self,
@@ -255,21 +253,12 @@ pub fn setup_port(
     // page 219
     /// 16 MHz
     const SYSTEM_OSC_CLOCK_SPEED: u32 = 16_000_000;
-    // the MOSC is variable frequeny (5 MHz to 25 MHz)
 
-    // the XOSC can act as a real time clock as well!
-
-    // The internal system clock (SysClk), is derived from any of the above sources plus two others: the
-    // output of the main internal PLL and the precision internal oscillator divided by four (4 MHz ± 1%).
-    // The frequency of the PLL clock reference must be in the range of 5 MHz to 25 MHz (inclusive).
-    // Table 5-3 on page 220 shows how the various clock sources can be used in a system
-    // TODO: migrate all of the above comments to a github issue
-
-    // TODO: how do you determine what's being used as the system clock?!
     let system_clock = SYSTEM_OSC_CLOCK_SPEED;
 
-    // TODO: The UART generates an internal baud-rate reference clock at 8x or 16x the baud-rate (referred to
+    // The UART generates an internal baud-rate reference clock at 8x or 16x the baud-rate (referred to
     // as Baud8 and Baud16, depending on the setting of the HSE bit (bit 5) in UARTCTL)
+    // I ran out of time and don't check this bit
     let clock_divider = 16;
 
     let baud_rate_divisor = (system_clock as f32) / ((clock_divider * options.baud_rate) as f32);
@@ -277,14 +266,8 @@ pub fn setup_port(
     let baud_rate_divisor_integer = baud_rate_divisor as u32;
     let baud_rate_divisor_fraction = baud_rate_divisor - (baud_rate_divisor_integer as f32);
 
-    // TODO:
-    // if baud_rate_divisor_integer.to_bits().length > 22 {
-    //     panic!();
-    // }
-
     let baud_rate_divisor_fraction = ((baud_rate_divisor_fraction * 64.0) + 0.5) as u32;
 
-    // TODO: verify and comment
     unsafe {
         memory::write(port.integer_baud_rate_divisor(), baud_rate_divisor_integer);
         memory::write(

@@ -30,16 +30,16 @@ impl Board {
         (self.base() + OFFSET) as *mut u32
     }
 
-    /// The memory address of the TODO
+    /// The memory address of the run mode clock gating control 1 (RCGC1) register for the system
     ///
-    /// Page TODO of data sheet
+    /// Page (ran out of time) of data sheet
     pub(crate) const fn run_mode_clock_gating_control_1(&self) -> *mut u32 {
         const OFFSET: u32 = 0x104;
         (self.base() + OFFSET) as *mut u32
     }
 }
 
-/// A setup version of the board that GPIO and UART ports (TODO: say more features when I make those) can be set up on
+/// A setup version of the board that GPIO and UART ports can be set up on
 pub struct UsableBoard {
     board: Board,
 }

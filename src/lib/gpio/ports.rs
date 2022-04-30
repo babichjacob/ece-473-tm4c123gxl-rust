@@ -118,10 +118,6 @@ impl Port {
         const OFFSET: u32 = 0x510;
         (self.base() + OFFSET) as *mut u32
     }
-
-    // TODO: examine page 690 (ADC) for applicability
-    // Note to self: page 1351 of data sheet for PWM
-    // Apparently also for ADC!
 }
 
 impl Port {

@@ -137,8 +137,6 @@ impl WritablePin {
 /// Page 684 of the data sheet for how the lock mechanism works
 const UNLOCK: u32 = 0x4C4F434B;
 
-/// TODO: read page 656 (10.3 Initialization and Configuration)
-/// TODO: read page 657 (Table 10-3 GPIO Pad Configuration Examples)
 fn setup_pins<const N: usize>(
     port: Port,
     pins: [Pin; N],
@@ -191,7 +189,6 @@ fn setup_pins<const N: usize>(
         }
     }
 
-    // TODO / WIP: commit here?!
     unsafe {
         memory::set_bits(port.commit(), &pins_to_bits(&pins));
     }
@@ -246,9 +243,7 @@ fn setup_pins<const N: usize>(
             }
         }
     }
-    // TODO: check page 671 or 682 (+ more prob) for a table showing initial pin states
-
-    // TODO / WIP: Re-lock the pins?!
+    
     unsafe {
         memory::write(port.lock(), 0);
     }
